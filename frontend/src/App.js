@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Toaster, toast } from "@/components/ui/sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Respect env rules
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -80,6 +81,12 @@ function FarmerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [project, setProject] = useState(null);
 
+  // Camera states
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+
   const disabled = useMemo(()=> !farmerName || !area || !plants || !location, [farmerName, area, plants, location]);
 
   const createProject = async () => {
@@ -122,6 +129,63 @@ function FarmerPage() {
     if (!id) return;
     await uploadImages(id);
     await submitForAnalysis(id);
+  };
+
+  // Camera helpers
+  const openCamera = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error("Camera not supported on this device");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (e) {
+      toast.error("Unable to access camera. Please allow permissions.");
+    }
+  };
+
+  const stopCamera = () => {
+    try {
+      const tracks = streamRef.current?.getTracks?.() || [];
+      tracks.forEach(t => t.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
+    } catch {}
+  };
+
+  const capturePhoto = async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const w = video.videoWidth || 1280;
+    const h = video.videoHeight || 720;
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+    const blob = await new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/jpeg', 0.92));
+    if (!blob) return;
+    const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    setFiles(prev => [...prev, file]);
+    toast.success("Photo added to uploads");
+  };
+
+  useEffect(()=>{
+    if (cameraOpen) {
+      openCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
+
+  const removeFileAt = (idx) => {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
   };
 
   return (
@@ -175,8 +239,38 @@ function FarmerPage() {
             </div>
             <div className="mb-3">
               <div className="label">Upload drone/satellite images</div>
-              <Input data-testid="image-upload" type="file" multiple accept="image/png,image/jpeg" onChange={e=>setFiles(Array.from(e.target.files||[]))} />
-              <div className="text-xs opacity-70 mt-1">JPG/PNG up to 25MB each.</div>
+              <div className="flex items-center gap-2 mb-2">
+                <Input data-testid="image-upload" type="file" multiple accept="image/png,image/jpeg" capture="environment" onChange={e=>setFiles(Array.from(e.target.files||[]))} />
+                <Dialog open={cameraOpen} onOpenChange={setCameraOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary" data-testid="open-camera-btn">Open camera</Button>
+                  </DialogTrigger>
+                  <DialogContent data-testid="camera-dialog">
+                    <DialogHeader>
+                      <DialogTitle>Capture photo</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <video ref={videoRef} playsInline autoPlay muted className="w-full rounded" data-testid="camera-video" />
+                      <canvas ref={canvasRef} className="hidden" />
+                      <div className="flex gap-2">
+                        <Button onClick={capturePhoto} data-testid="capture-photo-btn">Capture &amp; add</Button>
+                        <Button variant="outline" onClick={()=>setCameraOpen(false)} data-testid="close-camera-btn">Done</Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              {files.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mt-2" data-testid="upload-previews">
+                  {files.map((f, idx) => (
+                    <div key={idx} className="relative">
+                      <img alt="preview" src={URL.createObjectURL(f)} className="rounded" data-testid={`preview-${idx}`} />
+                      <button className="btn-primary" style={{position:'absolute', top:6, right:6, background:'#d9534f'}} onClick={()=>removeFileAt(idx)} data-testid={`remove-preview-${idx}`}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-xs opacity-70 mt-1">Use your camera or choose files. JPG/PNG up to 25MB each.</div>
             </div>
             <Button data-testid="submit-project" disabled={disabled || submitting} onClick={onSubmit}>{submitting ? 'Submitting...' : 'Submit for analysis'}</Button>
           </div>
