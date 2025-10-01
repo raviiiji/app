@@ -3,7 +3,6 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
 
-// shadcn components
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -17,7 +16,7 @@ const API = `${BACKEND_URL}/api`;
 
 const Pill = ({ children, className = "" }) => (<span className={`badge ${className}`}>{children}</span>);
 
-function Navbar() { /* ... unchanged ... */
+function Navbar() {
   return (
     <div className="navbar">
       <div className="mx-auto max-w-6xl flex items-center justify-between px-5 py-4">
@@ -35,14 +34,14 @@ function Navbar() { /* ... unchanged ... */
   );
 }
 
-function Landing() { /* ... unchanged core ... */
+function Landing() {
   useEffect(() => { axios.get(`${API}/`).catch(()=>{}); }, []);
   return (
     <div className="hero">
       <div className="mx-auto max-w-6xl px-5 py-16 grid-2 items-center">
         <div>
           <h1 className="text-5xl leading-tight mb-4" data-testid="hero-title">Measure. Verify. Register blue carbon.</h1>
-          <p className="text-lg opacity-80 mb-6">Upload imagery (GeoTIFF, JP2, HDF, NetCDF, JPEG/PNG), run NDVI & sequestration models, and move to a verifiable registry.</p>
+          <p className="text-lg opacity-80 mb-6">Upload imagery (GeoTIFF/COG, JP2, HDF5, NetCDF, JPEG/PNG), run NDVI & sequestration models, and move to a verifiable registry.</p>
           <div className="flex gap-3">
             <Link to="/farmer" className="btn-primary" data-testid="get-started-btn">Get started</Link>
             <Link to="/verifier" className="btn-primary" style={{background:"#34b3a0"}} data-testid="verify-btn">Verifier</Link>
@@ -81,35 +80,14 @@ function FarmerPage() {
   const createProject = async () => {
     setSubmitting(true);
     try {
-      const payload = {
-        farmer_name: farmerName,
-        details: {
-          area_hectares: parseFloat(area),
-          num_plants: parseInt(plants,10),
-          plantation_type: ptype,
-          location,
-          latitude: lat ? parseFloat(lat) : null,
-          longitude: lng ? parseFloat(lng) : null,
-          data_source: dataSource,
-          format_type: formatType,
-        }
-      };
-      const { data } = await axios.post(`${API}/projects`, payload);
-      setProject(data);
-      return data.id;
+      const payload = { farmer_name: farmerName, details: { area_hectares: parseFloat(area), num_plants: parseInt(plants,10), plantation_type: ptype, location, latitude: lat ? parseFloat(lat) : null, longitude: lng ? parseFloat(lng) : null, data_source: dataSource, format_type: formatType } };
+      const { data } = await axios.post(`${API}/projects`, payload); setProject(data); return data.id;
     } finally { setSubmitting(false); }
   };
 
-  const uploadFiles = async (projectId) => {
-    if (!files || files.length === 0) return;
-    const form = new FormData(); for (const f of files) form.append("files", f);
-    await axios.post(`${API}/projects/${projectId}/upload`, form, { headers: { 'Content-Type': 'multipart/form-data' }});
-  };
+  const uploadFiles = async (projectId) => { if (!files || files.length === 0) return; const form = new FormData(); for (const f of files) form.append("files", f); await axios.post(`${API}/projects/${projectId}/upload`, form, { headers: { 'Content-Type': 'multipart/form-data' }}); };
 
-  const submitForAnalysis = async (projectId) => {
-    const { data } = await axios.post(`${API}/projects/${projectId}/analyze`);
-    setProject(data); toast.success("Analysis complete. Awaiting verification");
-  };
+  const submitForAnalysis = async (projectId) => { const { data } = await axios.post(`${API}/projects/${projectId}/analyze`); setProject(data); toast.success("Analysis complete. Awaiting verification"); };
 
   const onSubmit = async () => { const id = await createProject(); if (!id) return; await uploadFiles(id); await submitForAnalysis(id); };
 
@@ -138,34 +116,15 @@ function FarmerPage() {
               </div>
               <div>
                 <div className="label">Data source</div>
-                <Select value={dataSource} onValueChange={setDataSource}>
-                  <SelectTrigger data-testid="data-source"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Satellite">Satellite (Sentinel/Landsat/Planet)</SelectItem>
-                    <SelectItem value="Drone">Drone (RGB/Multispectral/Thermal)</SelectItem>
-                    <SelectItem value="Specialized">Specialized (GeoTIFF/NetCDF/HDF)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Select value={dataSource} onValueChange={setDataSource}><SelectTrigger data-testid="data-source"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Satellite">Satellite (Sentinel/Landsat/Planet)</SelectItem><SelectItem value="Drone">Drone (RGB/Multispectral/Thermal)</SelectItem><SelectItem value="Specialized">Specialized (GeoTIFF/NetCDF/HDF)</SelectItem></SelectContent></Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <div className="label">Format type</div>
-                <Select value={formatType} onValueChange={setFormatType}>
-                  <SelectTrigger data-testid="format-type"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GeoTIFF">GeoTIFF/COG (.tif/.tiff)</SelectItem>
-                    <SelectItem value="JPEG/PNG">JPEG/PNG</SelectItem>
-                    <SelectItem value="JP2">JPEG2000 (.jp2)</SelectItem>
-                    <SelectItem value="HDF5">HDF/HDF5 (.hdf/.h5)</SelectItem>
-                    <SelectItem value="NetCDF">NetCDF (.nc)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Select value={formatType} onValueChange={setFormatType}><SelectTrigger data-testid="format-type"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="GeoTIFF">GeoTIFF/COG (.tif/.tiff)</SelectItem><SelectItem value="JPEG/PNG">JPEG/PNG</SelectItem><SelectItem value="JP2">JPEG2000 (.jp2)</SelectItem><SelectItem value="HDF5">HDF/HDF5 (.hdf/.h5)</SelectItem><SelectItem value="NetCDF">NetCDF (.nc)</SelectItem></SelectContent></Select>
               </div>
-              <div>
-                <div className="label">Location</div>
-                <Input data-testid="location" placeholder="State, Country" value={location} onChange={e=>setLocation(e.target.value)} />
-              </div>
+              <div><div className="label">Location</div><Input data-testid="location" placeholder="State, Country" value={location} onChange={e=>setLocation(e.target.value)} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div><div className="label">Latitude (optional)</div><Input data-testid="lat" type="number" value={lat} onChange={e=>setLat(e.target.value)} /></div>
@@ -214,8 +173,13 @@ function FarmerPage() {
                       <div className="card p-3"><div className="text-sm opacity-70">Growth %</div><div className="text-2xl font-semibold">{project.growth_percent ?? '-'}</div></div>
                     </div>
                     <div className="card p-3 mb-2"><div className="text-sm opacity-70">CO₂ sequestration (tonnes)</div><div className="text-2xl font-semibold">{project.co2_tonnes ?? '-'}</div></div>
-                    <div className="text-sm opacity-80">{project.quality_notes}</div>
-                    {project.image_urls?.length ? (<div className="mt-3 grid grid-cols-3 gap-2">{project.image_urls.map((u, idx) => (<img key={idx} src={u} alt="upload" className="rounded" data-testid={`analysis-image-${idx}`} />))}</div>) : null}
+                    {project?.ndvi_map_url && (
+                      <div className="mt-3">
+                        <div className="text-sm opacity-70 mb-1">NDVI heatmap</div>
+                        <img src={project.ndvi_map_url} alt="NDVI heatmap" className="rounded" data-testid="ndvi-heatmap" />
+                      </div>
+                    )}
+                    <div className="text-sm opacity-80 mt-2">{project.quality_notes}</div>
                   </div>
                 )}
               </TabsContent>
@@ -236,7 +200,10 @@ function FarmerPage() {
                       <div className="card p-3"><div className="text-sm opacity-70">Maturity %</div><div className="text-2xl font-semibold">{project.maturity_pct ?? '-'}</div></div>
                       <div className="card p-3"><div className="text-sm opacity-70">Area / Plants</div><div className="text-2xl font-semibold">{project?.details?.area_hectares} ha • {project?.details?.num_plants} plants</div></div>
                     </div>
-                    <Button data-testid="export-report" onClick={async()=>{ if(!project) return; const { data } = await axios.get(`${API}/projects/${project.id}/report`); const blob = new Blob([JSON.stringify(data,null,2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `project_${project.id}_report.json`; a.click(); URL.revokeObjectURL(url); }}>Export JSON</Button>
+                    <div className="flex gap-2">
+                      <Button data-testid="export-report" onClick={async()=>{ if(!project) return; const { data } = await axios.get(`${API}/projects/${project.id}/report`); const blob = new Blob([JSON.stringify(data,null,2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `project_${project.id}_report.json`; a.click(); URL.revokeObjectURL(url); }}>Export JSON</Button>
+                      <Button data-testid="export-stac" variant="secondary" onClick={async()=>{ if(!project) return; const { data } = await axios.get(`${API}/projects/${project.id}/stac`); const blob = new Blob([JSON.stringify(data,null,2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `project_${project.id}_stac.json`; a.click(); URL.revokeObjectURL(url); }}>Export STAC</Button>
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -248,7 +215,7 @@ function FarmerPage() {
   );
 }
 
-function VerifierPage() { /* unchanged from previous step */
+function VerifierPage() {
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(false); const [comment, setComment] = useState("");
   const load = async () => { setLoading(true); try { const { data } = await axios.get(`${API}/verifier/projects`); setRows(data); } finally { setLoading(false); } };
   useEffect(()=>{ load(); },[]);
@@ -256,7 +223,7 @@ function VerifierPage() { /* unchanged from previous step */
   return (<div className="mx-auto max-w-6xl px-5 py-8"><h2 className="text-3xl mb-4" data-testid="verifier-title">Verifier dashboard</h2><div className="card p-5"><Table data-testid="verifier-table"><TableHeader><TableRow><TableHead>Project</TableHead><TableHead>Farmer</TableHead><TableHead>Status</TableHead><TableHead>NDVI</TableHead><TableHead>Growth%</TableHead><TableHead>CO₂</TableHead><TableHead>Action</TableHead></TableRow></TableHeader><TableBody>{rows.map(r=> (<TableRow key={r.id}><TableCell className="font-mono text-xs">{r.id.slice(0,8)}...</TableCell><TableCell>{r.farmer_name}</TableCell><TableCell><Pill className={r.status}>{r.status}</Pill></TableCell><TableCell>{r.ndvi_score ?? '-'}</TableCell><TableCell>{r.growth_percent ?? '-'}</TableCell><TableCell>{r.co2_tonnes ?? '-'}</TableCell><TableCell><div className="flex items-center gap-2"><Input data-testid={`verifier-comment-${r.id}`} placeholder="comment" value={comment} onChange={e=>setComment(e.target.value)} style={{maxWidth:200}} /><Button data-testid={`approve-${r.id}`} onClick={()=>act(r.id,'approve')}>Approve</Button><Button data-testid={`reject-${r.id}`} variant="destructive" onClick={()=>act(r.id,'reject')}>Reject</Button></div></TableCell></TableRow>))}{!rows.length && !loading && (<TableRow><TableCell colSpan={7} className="opacity-70">No projects pending.</TableCell></TableRow>)}</TableBody></Table></div></div>);
 }
 
-function AdminPage() { /* unchanged */
+function AdminPage() {
   const [settings, setSettings] = useState({ token_price_usd: 10.0, marketplace_enabled: true }); const [loading, setLoading] = useState(false);
   const load = async ()=>{ setLoading(true); try { const { data } = await axios.get(`${API}/admin/settings`); setSettings(data); } finally { setLoading(false); } }; useEffect(()=>{ load(); },[]);
   const save = async ()=>{ await axios.post(`${API}/admin/settings`, settings); toast.success("Settings saved"); };
