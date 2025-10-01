@@ -21,7 +21,7 @@ function Navbar() {
     <div className="navbar">
       <div className="mx-auto max-w-6xl flex items-center justify-between px-5 py-4">
         <Link to="/" className="flex items-center gap-2 no-underline" data-testid="nav-home">
-          <div className="w-8 h-8 rounded-full" style={{background: "linear-gradient(135deg, #34b3a0, #6dd5c8)"}} />
+          <img src="/vayu-logo.png" alt="Vayu" className="w-8 h-8 rounded-full" />
           <span className="font-semibold">Blue Carbon MRV</span>
         </Link>
         <div className="flex items-center gap-3">
