@@ -181,7 +181,6 @@ function FarmerPage() {
       stopCamera();
     }
     return () => stopCamera();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraOpen]);
 
   const removeFileAt = (idx) => {
