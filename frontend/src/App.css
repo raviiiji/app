@@ -1,34 +1,85 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Global enhancements for Blue Carbon UI */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap');
+
+:root {
+  --brand-bg: #f7fbfb; /* light ocean */
+  --brand-ink: #0f2a2e; /* deep teal */
+  --brand-accent: #34b3a0; /* seafoam */
+  --brand-accent-2: #6dd5c8; /* lighter */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+html, body, #root, .App {
+  height: 100%;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+body {
+  font-family: 'Space Grotesk', Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--brand-bg);
+  color: var(--brand-ink);
 }
 
-.App-link {
-    color: #61dafb;
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: saturate(120%) blur(12px);
+  background: rgba(255,255,255,0.8);
+  border-bottom: 1px solid rgba(15,42,46,0.06);
 }
+
+.hero {
+  background: linear-gradient(180deg, rgba(52,179,160,0.08), rgba(255,255,255,0.0));
+}
+
+.card {
+  background: white;
+  border: 1px solid rgba(15,42,46,0.08);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15,42,46,0.06);
+}
+
+.btn-primary {
+  background: var(--brand-ink);
+  color: white;
+  border-radius: 999px;
+  padding: 10px 18px;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: background 200ms, box-shadow 200ms, transform 120ms;
+}
+.btn-primary:hover { box-shadow: 0 8px 18px rgba(52,179,160,0.25); }
+.btn-primary:active { transform: translateY(1px); }
+
+.section {
+  padding: 28px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.label { font-weight: 600; font-size: 14px; }
+.input, .textarea, .select {
+  width: 100%;
+  border: 1px solid rgba(15,42,46,0.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+.table thead th { text-align: left; font-size: 12px; color: #5b6b6e; }
+.table tbody tr { background: white; }
+.table tbody td { padding: 12px 10px; border-top: 1px solid rgba(0,0,0,0.06); border-bottom: 1px solid rgba(0,0,0,0.06); }
+
+.badge { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+.badge.approved { background: #e6fbf5; color: #107a5e; }
+.badge.rejected { background: #ffeeee; color: #8a2020; }
+.badge.under_review { background: #fff7e6; color: #7b4b00; }
+.badge.submitted { background: #eef6ff; color: #114a7a; }
