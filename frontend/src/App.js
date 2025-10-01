@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Link, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
+
+// shadcn components
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Toaster, toast } from "@/components/ui/sonner";
 
 // Respect env rules
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Small UI helpers (we will still use shadcn primitives from src/components/ui when needed)
 const Pill = ({ children, className = "" }) => (
   <span className={`badge ${className}`}>{children}</span>
 );
@@ -108,6 +114,7 @@ function FarmerPage() {
   const submitForAnalysis = async (projectId) => {
     const { data } = await axios.post(`${API}/projects/${projectId}/analyze`);
     setProject(data);
+    toast.success("Analysis complete. Awaiting verification");
   };
 
   const onSubmit = async () => {
@@ -125,48 +132,53 @@ function FarmerPage() {
           <div className="section">
             <div className="mb-3">
               <div className="label">Farmer / Land Owner</div>
-              <input data-testid="farmer-name" className="input" placeholder="Your name" value={farmerName} onChange={e=>setFarmerName(e.target.value)} />
+              <Input data-testid="farmer-name" placeholder="Your name" value={farmerName} onChange={e=>setFarmerName(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <div className="label">Area size (hectares)</div>
-                <input data-testid="area-size" className="input" type="number" value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g., 120" />
+                <Input data-testid="area-size" type="number" value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g., 120" />
               </div>
               <div>
                 <div className="label">Number of plants</div>
-                <input data-testid="num-plants" className="input" type="number" value={plants} onChange={e=>setPlants(e.target.value)} placeholder="e.g., 45000" />
+                <Input data-testid="num-plants" type="number" value={plants} onChange={e=>setPlants(e.target.value)} placeholder="e.g., 45000" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <div className="label">Plantation type</div>
-                <select data-testid="plantation-type" className="select" value={ptype} onChange={e=>setPtype(e.target.value)}>
-                  <option value="Mangrove">Mangrove</option>
-                  <option value="Seagrass">Seagrass</option>
-                  <option value="Saltmarsh">Saltmarsh</option>
-                </select>
+                <Select value={ptype} onValueChange={setPtype}>
+                  <SelectTrigger data-testid="plantation-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mangrove">Mangrove</SelectItem>
+                    <SelectItem value="Seagrass">Seagrass</SelectItem>
+                    <SelectItem value="Saltmarsh">Saltmarsh</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <div className="label">Location</div>
-                <input data-testid="location" className="input" placeholder="State, Country" value={location} onChange={e=>setLocation(e.target.value)} />
+                <Input data-testid="location" placeholder="State, Country" value={location} onChange={e=>setLocation(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <div className="label">Latitude (optional)</div>
-                <input data-testid="lat" className="input" type="number" value={lat} onChange={e=>setLat(e.target.value)} />
+                <Input data-testid="lat" type="number" value={lat} onChange={e=>setLat(e.target.value)} />
               </div>
               <div>
                 <div className="label">Longitude (optional)</div>
-                <input data-testid="lng" className="input" type="number" value={lng} onChange={e=>setLng(e.target.value)} />
+                <Input data-testid="lng" type="number" value={lng} onChange={e=>setLng(e.target.value)} />
               </div>
             </div>
             <div className="mb-3">
               <div className="label">Upload drone/satellite images</div>
-              <input data-testid="image-upload" className="input" type="file" multiple accept="image/png,image/jpeg" onChange={e=>setFiles(Array.from(e.target.files||[]))} />
+              <Input data-testid="image-upload" type="file" multiple accept="image/png,image/jpeg" onChange={e=>setFiles(Array.from(e.target.files||[]))} />
               <div className="text-xs opacity-70 mt-1">JPG/PNG up to 25MB each.</div>
             </div>
-            <button data-testid="submit-project" className="btn-primary" disabled={disabled || submitting} onClick={onSubmit}>{submitting ? 'Submitting...' : 'Submit for analysis'}</button>
+            <Button data-testid="submit-project" disabled={disabled || submitting} onClick={onSubmit}>{submitting ? 'Submitting...' : 'Submit for analysis'}</Button>
           </div>
         </div>
         <div className="card p-5">
@@ -233,41 +245,41 @@ function VerifierPage() {
     <div className="mx-auto max-w-6xl px-5 py-8">
       <h2 className="text-3xl mb-4" data-testid="verifier-title">Verifier dashboard</h2>
       <div className="card p-5">
-        <table className="table" data-testid="verifier-table">
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>Farmer</th>
-              <th>Status</th>
-              <th>NDVI</th>
-              <th>Growth%</th>
-              <th>CO₂</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table data-testid="verifier-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Project</TableHead>
+              <TableHead>Farmer</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>NDVI</TableHead>
+              <TableHead>Growth%</TableHead>
+              <TableHead>CO₂</TableHead>
+              <TableHead>Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((r)=> (
-              <tr key={r.id}>
-                <td className="font-mono text-xs">{r.id.slice(0,8)}...</td>
-                <td>{r.farmer_name}</td>
-                <td><Pill className={r.status}>{r.status}</Pill></td>
-                <td>{r.ndvi_score ?? '-'}</td>
-                <td>{r.growth_percent ?? '-'}</td>
-                <td>{r.co2_tonnes ?? '-'}</td>
-                <td>
+              <TableRow key={r.id}>
+                <TableCell className="font-mono text-xs">{r.id.slice(0,8)}...</TableCell>
+                <TableCell>{r.farmer_name}</TableCell>
+                <TableCell><Pill className={r.status}>{r.status}</Pill></TableCell>
+                <TableCell>{r.ndvi_score ?? '-'}</TableCell>
+                <TableCell>{r.growth_percent ?? '-'}</TableCell>
+                <TableCell>{r.co2_tonnes ?? '-'}</TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
-                    <input data-testid={`verifier-comment-${r.id}`} className="input" placeholder="comment" value={comment} onChange={e=>setComment(e.target.value)} style={{maxWidth:200}} />
-                    <button data-testid={`approve-${r.id}`} className="btn-primary" onClick={()=>act(r.id,'approve')}>Approve</button>
-                    <button data-testid={`reject-${r.id}`} className="btn-primary" style={{background:'#d9534f'}} onClick={()=>act(r.id,'reject')}>Reject</button>
+                    <Input data-testid={`verifier-comment-${r.id}`} placeholder="comment" value={comment} onChange={e=>setComment(e.target.value)} style={{maxWidth:200}} />
+                    <Button data-testid={`approve-${r.id}`} onClick={()=>act(r.id,'approve')}>Approve</Button>
+                    <Button data-testid={`reject-${r.id}`} variant="destructive" onClick={()=>act(r.id,'reject')}>Reject</Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!rows.length && !loading && (
-              <tr><td colSpan="7" className="opacity-70">No projects pending.</td></tr>
+              <TableRow><TableCell colSpan={7} className="opacity-70">No projects pending.</TableCell></TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -288,6 +300,7 @@ function AdminPage() {
 
   const save = async () => {
     await axios.post(`${API}/admin/settings`, settings);
+    toast.success("Settings saved");
   };
 
   return (
@@ -297,18 +310,23 @@ function AdminPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="label">Token price (USD)</div>
-            <input data-testid="token-price" className="input" type="number" step="0.01" value={settings.token_price_usd} onChange={e=>setSettings(s=>({...s, token_price_usd: parseFloat(e.target.value)}))} />
+            <Input data-testid="token-price" type="number" step="0.01" value={settings.token_price_usd} onChange={e=>setSettings(s=>({...s, token_price_usd: parseFloat(e.target.value)}))} />
           </div>
           <div>
             <div className="label">Marketplace enabled</div>
-            <select data-testid="marketplace-enabled" className="select" value={String(settings.marketplace_enabled)} onChange={e=>setSettings(s=>({...s, marketplace_enabled: e.target.value === 'true'}))}>
-              <option value="true">True</option>
-              <option value="false">False</option>
-            </select>
+            <Select value={String(settings.marketplace_enabled)} onValueChange={(v)=>setSettings(s=>({...s, marketplace_enabled: v==='true'}))}>
+              <SelectTrigger data-testid="marketplace-enabled">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="mt-4">
-          <button className="btn-primary" onClick={save} data-testid="save-settings">Save</button>
+          <Button onClick={save} data-testid="save-settings">Save</Button>
         </div>
       </div>
     </div>
@@ -318,6 +336,7 @@ function AdminPage() {
 function AppShell({children}){ return (
   <div className="app-shell">
     <Navbar />
+    <Toaster />
     {children}
   </div>
 )}
