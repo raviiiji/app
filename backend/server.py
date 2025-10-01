@@ -173,7 +173,7 @@ async def upload_images(project_id: str, files: List[UploadFile] = File(...)):
         name = f"{project_id}_{uuid.uuid4()}.{ 'png' if 'png' in f.content_type else 'jpg'}"
         dest = UPLOAD_DIR / name
         content = await f.read()
-        if len(content) &gt; 25 * 1024 * 1024:
+        if len(content) > 25 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="File too large (25MB max)")
         with open(dest, 'wb') as out:
             out.write(content)
